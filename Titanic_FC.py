@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd 
 from scipy import optimize
 
-data = pd.read_csv('trainT.csv')
+data = pd.read_csv('rainT.csv')
 
 x = data[['Age','Sex_female','Sex_male','Pclass_1','Pclass_2','Pclass_3']]
 y = data['Survived']
@@ -62,25 +62,6 @@ class Neural_Network:
 		Cost = 0.5*np.sum((y - yhat)**2)
 		return Cost
 
-	def back_prop(self,x,y):
-		output = self.forward_prop(x)
-		self.slope_output_layer = self.derivative_sigmoid(output)
-		self.slope_second_hidden_layer = self.derivative_sigmoid(self.second_hidden_layer_activation)
-		self.slope_first_hidden_layer = self.derivative_sigmoid(self.first_hidden_layer_activation)
-
-		y = y.reshape((y.size,1))
-		self.E = y-output
-		delta_output = self.E * self.slope_output_layer
-	
-		
-		self.Error_at_second_hidden_layer = delta_output.dot(self.w_OUT.T)
-		delta_second_hidden_layer = self.Error_at_second_hidden_layer * self.slope_second_hidden_layer
-
-		self.Error_at_first_hidden_layer = delta_second_hidden_layer.dot(self.w_H2.T)
-		delta_first_hidden_layer = self.Error_at_first_hidden_layer * self.slope_first_hidden_layer
-
-		return delta_first_hidden_layer,delta_second_hidden_layer,delta_output
-
 	def get_params(self):
 		params = np.concatenate((self.w_H1.ravel(),self.w_H2.ravel(),self.w_OUT.ravel()))
 		return params
@@ -107,8 +88,8 @@ class trainer(object):
 	def cost_function_wrapper(self,params,x,y):
 		self.N.set_params(params)
 		cost = self.N.cost_function(x,y)
-		grad = self.N.compute_grad(x,y)
-		return cost ,grad
+		
+		return cost
 
 	def callbackF(self,params):
 		self.N.set_params(params)
@@ -122,12 +103,12 @@ class trainer(object):
 
 		params0 = self.N.get_params()
 
-		options = {'maxiter':200,'disp':True}
-		_res = optimize.minimize(self.cost_function_wrapper, params0, jac=True, method='BFGS', args=(x,y), options=options, callback=self.callbackF)
+		
+		x, min_val, info = optimize.fmin_l_bfgs_b(self.cost_function_wrapper, params0, approx_grad=1, args=(x,y), maxiter=100000, disp=True, callback=self.callbackF)
 
-		self.N.set_params(_res.x)
-		self.optimizationResult = _res
-
+		
+		return x,min_val,info
+	
 
 
 
@@ -138,22 +119,6 @@ NN = Neural_Network()
 T  = trainer(NN)
 
 T.train(x_train,y_train)
+ 
 
-
-
-''''
-		for i in range(epoch):
-			output = self.forward_prop(x)
-			
-
-			w_OUT += second_hidden_layer_activation.T.dot(delta_output) * lr
-			b_OUT += np.sum(delta_output,axis=0,keepdims=True)*lr
-
-			w_H2 += first_hidden_layer_activation.T.dot(delta_second_hidden_layer) * lr
-			b_H2 += np.sum(delta_second_hidden_layer,axis=0,keepdims=True)*lr
-
-			w_H1 += x.T.dot(delta_first_hidden_layer) * lr
-			b_H1 += np.sum(delta_first_hidden_layer,axis=0,keepdims=True) *lr
-
-'''
 
